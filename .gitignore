@@ -58,3 +58,7 @@ dist/
 *~
 .DS_Store
 Thumbs.db
+.backboard/
+.vscode/
+learn/
+

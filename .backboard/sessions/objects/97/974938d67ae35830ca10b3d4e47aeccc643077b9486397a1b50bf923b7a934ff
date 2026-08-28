@@ -1,5 +1,0 @@
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/betting
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-BETS_RESULTS_TOPIC=bets-results
-KAFKA_CONSUMER_GROUP=settlement-service-v1
-APP_NAME=settlement-service
