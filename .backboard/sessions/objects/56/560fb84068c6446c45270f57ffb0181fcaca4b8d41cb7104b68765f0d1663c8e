@@ -1,0 +1,80 @@
+from decimal import Decimal, ROUND_HALF_UP
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_session
+from app.models import Bet, BetStatus, LedgerType, Wallet, WalletLedger
+from app.schemas import SettleMatchRequest, SettleMatchResponse
+
+
+router = APIRouter(prefix="/api/v1", tags=["settlement"])
+
+
+def calculate_payout_cents(stake_cents: int, odds: Decimal) -> int:
+    return int((Decimal(stake_cents) * odds).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+async def settle_match_outcome(
+    session: AsyncSession,
+    *,
+    match_id: str,
+    winning_selection_id: str,
+) -> SettleMatchResponse:
+    """Settle all accepted bets for one match in a single DB transaction."""
+
+    winning_bets = 0
+    losing_bets = 0
+    total_payout_cents = 0
+
+    async with session.begin():
+        result = await session.scalars(
+            select(Bet)
+            .where(Bet.match_id == match_id, Bet.status == BetStatus.ACCEPTED)
+            .with_for_update(skip_locked=True)
+        )
+        accepted_bets = list(result)
+
+        for bet in accepted_bets:
+            if bet.selection_id == winning_selection_id:
+                payout_cents = calculate_payout_cents(bet.stake_cents, Decimal(str(bet.odds)))
+                await session.execute(
+                    update(Wallet)
+                    .where(Wallet.user_id == bet.user_id)
+                    .values(balance_cents=Wallet.balance_cents + payout_cents)
+                )
+                bet.status = BetStatus.WON
+                session.add(
+                    WalletLedger(
+                        user_id=bet.user_id,
+                        amount_cents=payout_cents,
+                        type=LedgerType.BET_PAYOUT,
+                        reference_id=str(bet.id),
+                    )
+                )
+                winning_bets += 1
+                total_payout_cents += payout_cents
+            else:
+                bet.status = BetStatus.LOST
+                losing_bets += 1
+
+    return SettleMatchResponse(
+        match_id=match_id,
+        winning_selection_id=winning_selection_id,
+        winning_bets=winning_bets,
+        losing_bets=losing_bets,
+        total_payout_cents=total_payout_cents,
+    )
+
+
+@router.post("/settle-match", response_model=SettleMatchResponse)
+async def settle_match(
+    payload: SettleMatchRequest,
+    session: AsyncSession = Depends(get_session),
+) -> SettleMatchResponse:
+    return await settle_match_outcome(
+        session,
+        match_id=payload.match_id,
+        winning_selection_id=payload.winning_selection_id,
+    )

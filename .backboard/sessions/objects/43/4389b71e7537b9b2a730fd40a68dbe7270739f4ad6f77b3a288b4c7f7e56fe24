@@ -1,0 +1,72 @@
+import { Component, computed } from '@angular/core';
+import { CurrencyPipe, NgClass, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+import { AuthService } from '../../core/services/auth.service';
+import { BetSlipService } from '../../core/services/bet-slip.service';
+
+@Component({
+  selector: 'app-bet-slip',
+  standalone: true,
+  imports: [CurrencyPipe, FormsModule, NgClass, NgIf],
+  template: `
+    <aside class="sticky top-4 rounded-2xl border border-white/10 bg-slate-950/80 p-5 shadow-glow backdrop-blur">
+      <p class="text-sm uppercase tracking-[0.3em] text-emerald-300">Bet Slip</p>
+      <h2 class="mb-4 text-2xl font-semibold text-white">Execution Ticket</h2>
+
+      @if (state().selection; as selection) {
+        <div class="rounded-xl bg-white/5 p-4 text-sm text-slate-200">
+          <div class="flex justify-between gap-3"><span>Match</span><strong class="text-white">{{ selection.matchId }}</strong></div>
+          <div class="mt-2 flex justify-between gap-3"><span>Selection</span><strong class="text-white">{{ selection.selectionId }}</strong></div>
+          <div class="mt-2 flex justify-between gap-3"><span>Odds</span><strong class="text-emerald-300">{{ selection.odds }}</strong></div>
+        </div>
+
+        <label class="mt-4 grid gap-1 text-sm text-slate-300">
+          Stake dollars
+          <input class="rounded-xl border border-white/10 bg-felt-900 px-3 py-2 text-white outline-none ring-emerald-400 focus:ring-2"
+                 type="number"
+                 min="0.01"
+                 step="0.01"
+                 [ngModel]="state().stakeDollars"
+                 (ngModelChange)="betSlip.updateStake($event)">
+        </label>
+
+        <dl class="mt-4 grid gap-2 text-sm text-slate-300">
+          <div class="flex justify-between"><dt>Stake cents</dt><dd class="font-semibold text-white">{{ betSlip.stakeCents() }}</dd></div>
+          <div class="flex justify-between"><dt>Potential payout</dt><dd class="font-semibold text-white">{{ betSlip.potentialPayout() | currency:'USD' }}</dd></div>
+        </dl>
+
+        <button class="mt-4 w-full rounded-xl bg-emerald-400 px-4 py-3 font-black text-felt-900 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+                [disabled]="!auth.isAuthenticated() || state().status === 'PENDING'"
+                (click)="betSlip.submit()">
+          {{ state().status === 'PENDING' ? 'Pending...' : 'Submit Bet' }}
+        </button>
+        <button class="mt-2 w-full rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/5" (click)="betSlip.clear()">Clear</button>
+      } @else {
+        <p class="rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-300">Click live odds to populate your bet slip.</p>
+      }
+
+      <p *ngIf="!auth.isAuthenticated()" class="mt-4 text-sm text-amber-300">Login or register before submitting a bet.</p>
+      <div *ngIf="state().message" class="mt-4 rounded-xl p-3 text-sm" [ngClass]="statusClasses()">
+        <strong>{{ state().status }}</strong>
+        <p>{{ state().message }}</p>
+        <p *ngIf="state().eventId" class="mt-1 break-all text-xs opacity-80">event: {{ state().eventId }}</p>
+      </div>
+    </aside>
+  `
+})
+export class BetSlipComponent {
+  readonly state = this.betSlip.state;
+  readonly canSubmit = computed(() => this.auth.isAuthenticated() && !!this.state().selection && this.state().status !== 'PENDING');
+
+  constructor(readonly betSlip: BetSlipService, readonly auth: AuthService) {}
+
+  statusClasses(): Record<string, boolean> {
+    const status = this.state().status;
+    return {
+      'bg-sky-500/20 text-sky-100': status === 'PENDING',
+      'bg-emerald-500/20 text-emerald-100': status === 'ACCEPTED',
+      'bg-red-500/20 text-red-100': status === 'REJECTED' || status === 'ERROR'
+    };
+  }
+}

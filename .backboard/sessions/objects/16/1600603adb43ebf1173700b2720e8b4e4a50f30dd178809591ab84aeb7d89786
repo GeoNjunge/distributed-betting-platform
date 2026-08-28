@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://backboard.local/schemas/bets-submitted.schema.json",
+  "title": "bets-submitted event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "bet_id",
+    "account_id",
+    "idempotency_key",
+    "match_id",
+    "market_id",
+    "selection_id",
+    "stake_cents",
+    "potential_payout_cents",
+    "odds",
+    "bet_timestamp_ms"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "bet_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "account_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "match_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "market_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "selection_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "stake_cents": { "type": "integer", "minimum": 1 },
+    "potential_payout_cents": { "type": "integer", "minimum": 1 },
+    "odds": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "bet_timestamp_ms": { "type": "integer", "minimum": 1 }
+  }
+}

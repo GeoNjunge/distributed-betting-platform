@@ -1,0 +1,29 @@
+import { Component } from '@angular/core';
+
+import { AuthPanelComponent } from './features/auth/auth-panel.component';
+import { BetSlipComponent } from './features/bet-slip/bet-slip.component';
+import { MarketDisplayComponent } from './features/markets/market-display.component';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [AuthPanelComponent, BetSlipComponent, MarketDisplayComponent],
+  template: `
+    <main class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_35%),#07130d] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <header class="mx-auto mb-6 max-w-7xl">
+        <p class="text-sm uppercase tracking-[0.4em] text-emerald-300">Distributed Betting Platform</p>
+        <h1 class="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Real-time odds trading desk</h1>
+        <p class="mt-3 max-w-3xl text-slate-300">Stream market prices, authenticate, build a bet slip, and submit bets through the ingress service without client-side database mutations.</p>
+      </header>
+
+      <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_360px]">
+        <div class="grid gap-6">
+          <app-auth-panel />
+          <app-market-display />
+        </div>
+        <app-bet-slip />
+      </div>
+    </main>
+  `
+})
+export class AppComponent {}

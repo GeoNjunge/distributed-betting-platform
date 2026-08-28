@@ -1,0 +1,24 @@
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Checking for module 'rdkafka++'
+--   Found rdkafka++, version 2.3.0
+-- Configuring done (1.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/ubuntu/distributed_betting_platform/risk_engine/build
+[ 33%] Building CXX object CMakeFiles/risk_engine.dir/src/main.cpp.o
+/home/ubuntu/distributed_betting_platform/risk_engine/src/main.cpp: In function ‘bool {anonymous}::produce_result(RdKafka::Producer&, const std::string&, const std::string&, const std::string&)’:
+/home/ubuntu/distributed_betting_platform/risk_engine/src/main.cpp:119:92: error: a function-definition is not allowed here before ‘{’ token
+  119 | void seed_balances_from_env(risk_engine::RiskEngine& engine, std::int64_t default_balance) {
+      |                                                                                            ^
+/home/ubuntu/distributed_betting_platform/risk_engine/src/main.cpp: In function ‘int main()’:
+/home/ubuntu/distributed_betting_platform/risk_engine/src/main.cpp:159:9: error: ‘seed_balances_from_env’ was not declared in this scope
+  159 |         seed_balances_from_env(engine, default_balance);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+gmake[3]: *** [CMakeFiles/risk_engine.dir/build.make:76: CMakeFiles/risk_engine.dir/src/main.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/risk_engine.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/risk_engine.dir/rule] Error 2
+gmake: *** [Makefile:124: risk_engine] Error 2

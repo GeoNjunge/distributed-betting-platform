@@ -1,0 +1,2 @@
+asyncpg>=0.29,<1.0
+websockets>=12,<14

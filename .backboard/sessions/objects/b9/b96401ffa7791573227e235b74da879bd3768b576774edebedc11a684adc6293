@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://backboard.local/schemas/bets-results.schema.json",
+  "title": "bets-results event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "bet_id",
+    "account_id",
+    "idempotency_key",
+    "match_id",
+    "selection_id",
+    "stake_cents",
+    "odds",
+    "accepted",
+    "reason_code",
+    "reason",
+    "accepted_exposure_cents",
+    "remaining_balance_cents",
+    "decision_timestamp_ms"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "maxLength": 128 },
+    "bet_id": { "type": "string", "maxLength": 128 },
+    "account_id": { "type": "string", "maxLength": 128 },
+    "idempotency_key": { "type": "string", "maxLength": 128 },
+    "match_id": { "type": "string", "maxLength": 128 },
+    "selection_id": { "type": "string", "maxLength": 128 },
+    "stake_cents": { "type": "integer", "minimum": 0 },
+    "odds": { "type": "string", "maxLength": 32 },
+    "accepted": { "type": "boolean" },
+    "reason_code": {
+      "type": "string",
+      "enum": ["ACCEPTED", "SCHEMA_INVALID", "STALE_QUOTE", "ACCOUNT_NOT_FOUND", "INSUFFICIENT_FUNDS", "SAEC_EXCEEDED"]
+    },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "accepted_exposure_cents": { "type": "integer", "minimum": 0 },
+    "remaining_balance_cents": { "type": "integer", "minimum": 0 },
+    "decision_timestamp_ms": { "type": "integer", "minimum": 1 }
+  }
+}

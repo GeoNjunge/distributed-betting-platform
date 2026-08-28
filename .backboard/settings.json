@@ -1,0 +1,12 @@
+{
+	"permissions": {
+		"allow": [
+			"apply_patch",
+			"execute(python3 -m:*)",
+			"execute(if [:*)",
+			"execute(grep -n:*)",
+			"execute(bash -n:*)",
+			"execute(cmake --build:*)"
+		]
+	}
+}
