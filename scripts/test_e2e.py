@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""End-to-end smoke test for the distributed betting platform.
+
+Expected stack startup:
+    docker compose up --build
+
+Optional script dependencies for running from the host:
+    pip install asyncpg websockets
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import time
+import urllib.error
+import urllib.request
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+from http.cookiejar import CookieJar
+from typing import Any
+from uuid import NAMESPACE_DNS, uuid5
+
+import asyncpg
+import websockets
+
+INGRESS_URL = os.getenv("INGRESS_URL", "http://localhost:8000")
+ODDS_WS_URL = os.getenv("ODDS_WS_URL", "ws://localhost:8001/ws/odds")
+SETTLEMENT_URL = os.getenv("SETTLEMENT_URL", "http://localhost:8002")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/betting")
+
+E2E_EMAIL = os.getenv("E2E_EMAIL", "e2e-user@example.com")
+E2E_PASSWORD = os.getenv("E2E_PASSWORD", "correct-horse-battery-staple")
+E2E_USER_ID = str(uuid5(NAMESPACE_DNS, E2E_EMAIL.lower()))
+INITIAL_BALANCE_CENTS = 10_000
+STAKE_CENTS = 1_000
+
+
+class HttpClient:
+    def __init__(self) -> None:
+        self.cookie_jar = CookieJar()
+        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.cookie_jar))
+
+    def request_json(self, method: str, url: str, payload: dict[str, Any] | None = None) -> tuple[int, dict[str, Any]]:
+        body = None if payload is None else json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            url,
+            data=body,
+            method=method,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with self.opener.open(request, timeout=10) as response:
+                data = response.read()
+                return response.status, json.loads(data.decode("utf-8") or "{}")
+        except urllib.error.HTTPError as exc:
+            data = exc.read()
+            parsed = json.loads(data.decode("utf-8") or "{}") if data else {}
+            return exc.code, parsed
+
+
+async def wait_http(url: str, timeout_seconds: float = 60) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=2) as response:
+                if 200 <= response.status < 500:
+                    return
+        except Exception:
+            await asyncio.sleep(1)
+    raise TimeoutError(f"service did not become ready: {url}")
+
+
+async def init_schema_and_seed_wallet() -> None:
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        await conn.execute(
+            """
+            DO $$ BEGIN
+                CREATE TYPE bet_status AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'WON', 'LOST');
+            EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+            DO $$ BEGIN
+                CREATE TYPE ledger_type AS ENUM ('DEPOSIT', 'BET_STAKE', 'BET_PAYOUT');
+            EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY,
+                username VARCHAR(128) NOT NULL UNIQUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+            CREATE TABLE IF NOT EXISTS wallets (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                balance_cents BIGINT NOT NULL DEFAULT 0,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT ck_wallets_balance_non_negative CHECK (balance_cents >= 0)
+            );
+            CREATE TABLE IF NOT EXISTS bets (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                idempotency_key VARCHAR(128) NOT NULL UNIQUE,
+                match_id VARCHAR(128) NOT NULL,
+                selection_id VARCHAR(128) NOT NULL,
+                stake_cents BIGINT NOT NULL,
+                odds NUMERIC(10, 4) NOT NULL,
+                status bet_status NOT NULL DEFAULT 'PENDING',
+                rejection_reason TEXT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+            CREATE TABLE IF NOT EXISTS wallet_ledger (
+                id SERIAL PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                amount_cents BIGINT NOT NULL,
+                type ledger_type NOT NULL,
+                reference_id VARCHAR(128) NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+            """
+        )
+        async with conn.transaction():
+            await conn.execute(
+                """
+                INSERT INTO users(id, username, created_at)
+                VALUES($1::uuid, $2, now())
+                ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username
+                """,
+                E2E_USER_ID,
+                E2E_EMAIL,
+            )
+            await conn.execute("DELETE FROM wallet_ledger WHERE user_id = $1::uuid", E2E_USER_ID)
+            await conn.execute("DELETE FROM bets WHERE user_id = $1::uuid", E2E_USER_ID)
+            await conn.execute(
+                """
+                INSERT INTO wallets(user_id, balance_cents, updated_at)
+                VALUES($1::uuid, $2, now())
+                ON CONFLICT (user_id)
+                DO UPDATE SET balance_cents = EXCLUDED.balance_cents, updated_at = now()
+                """,
+                E2E_USER_ID,
+                INITIAL_BALANCE_CENTS,
+            )
+    finally:
+        await conn.close()
+
+
+async def get_wallet_balance() -> int:
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        value = await conn.fetchval("SELECT balance_cents FROM wallets WHERE user_id = $1::uuid", E2E_USER_ID)
+        if value is None:
+            raise AssertionError("seeded wallet was not found")
+        return int(value)
+    finally:
+        await conn.close()
+
+
+async def get_ledger_count(ledger_type: str) -> int:
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        value = await conn.fetchval(
+            "SELECT count(*) FROM wallet_ledger WHERE user_id = $1::uuid AND type = $2::ledger_type",
+            E2E_USER_ID,
+            ledger_type,
+        )
+        return int(value)
+    finally:
+        await conn.close()
+
+
+async def get_first_tick() -> dict[str, Any]:
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        try:
+            async with websockets.connect(ODDS_WS_URL, open_timeout=5) as websocket:
+                while time.monotonic() < deadline:
+                    raw = await asyncio.wait_for(websocket.recv(), timeout=5)
+                    payload = json.loads(raw.decode("utf-8") if isinstance(raw, bytes) else raw)
+                    if {"match_id", "selection_id", "decimal_odds"}.issubset(payload):
+                        return payload
+        except Exception:
+            await asyncio.sleep(1)
+    raise TimeoutError("did not receive a valid odds tick")
+
+
+def register_and_login(client: HttpClient) -> None:
+    register_status, register_body = client.request_json(
+        "POST",
+        f"{INGRESS_URL}/register",
+        {"email": E2E_EMAIL, "password": E2E_PASSWORD},
+    )
+    if register_status not in (201, 409):
+        raise AssertionError(f"register failed: {register_status} {register_body}")
+
+    login_status, login_body = client.request_json(
+        "POST",
+        f"{INGRESS_URL}/login",
+        {"email": E2E_EMAIL, "password": E2E_PASSWORD},
+    )
+    if login_status != 200:
+        raise AssertionError(f"login failed: {login_status} {login_body}")
+    if not any(cookie.name == "access_token" for cookie in client.cookie_jar):
+        raise AssertionError("login did not return an access_token HttpOnly cookie")
+
+
+def cents_to_money_string(cents: int) -> str:
+    return f"{Decimal(cents) / Decimal(100):.2f}"
+
+
+def submit_bet(client: HttpClient, tick: dict[str, Any]) -> tuple[str, str, int]:
+    odds = Decimal(str(tick["decimal_odds"]))
+    potential_payout_cents = int((Decimal(STAKE_CENTS) * odds).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    # Timestamp slightly in the future avoids false stale-quote failures in a
+    # cold Docker/Kafka test run while still exercising the 200ms protection path.
+    timestamp = (datetime.now(UTC) + timedelta(milliseconds=150)).isoformat().replace("+00:00", "Z")
+    status, body = client.request_json(
+        "POST",
+        f"{INGRESS_URL}/api/v1/bets",
+        {
+            "match_id": tick["match_id"],
+            "market_id": tick.get("market_id", "full-time-result"),
+            "selection_id": tick["selection_id"],
+            "stake": cents_to_money_string(STAKE_CENTS),
+            "potential_payout": cents_to_money_string(potential_payout_cents),
+            "timestamp": timestamp,
+        },
+    )
+    if status != 202:
+        raise AssertionError(f"bet submission failed: {status} {body}")
+    return body["event_id"], body["idempotency_key"], potential_payout_cents
+
+
+async def wait_for_debit(timeout_seconds: float = 30) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        balance = await get_wallet_balance()
+        stake_rows = await get_ledger_count("BET_STAKE")
+        if balance == 9_000 and stake_rows >= 1:
+            return
+        await asyncio.sleep(0.5)
+    balance = await get_wallet_balance()
+    stake_rows = await get_ledger_count("BET_STAKE")
+    raise AssertionError(f"settlement worker did not debit wallet; balance={balance}, BET_STAKE rows={stake_rows}")
+
+
+def trigger_settlement(client: HttpClient, match_id: str, winning_selection_id: str) -> dict[str, Any]:
+    status, body = client.request_json(
+        "POST",
+        f"{SETTLEMENT_URL}/api/v1/settle-match",
+        {"match_id": match_id, "winning_selection_id": winning_selection_id},
+    )
+    if status != 200:
+        raise AssertionError(f"settle-match failed: {status} {body}")
+    return body
+
+
+async def main() -> None:
+    print("[1/7] Waiting for HTTP services and initializing database...")
+    await wait_http(f"{INGRESS_URL}/healthz")
+    await wait_http(f"{SETTLEMENT_URL}/healthz")
+    await init_schema_and_seed_wallet()
+    assert await get_wallet_balance() == INITIAL_BALANCE_CENTS
+
+    print("[2/7] Registering and logging in through ingress_service...")
+    client = HttpClient()
+    register_and_login(client)
+
+    print("[3/7] Connecting to odds_service WebSocket and recording one valid tick...")
+    tick = await get_first_tick()
+    print(f"      tick={tick}")
+
+    print("[4/7] Submitting $10.00 bet through ingress_service...")
+    event_id, idempotency_key, expected_payout = submit_bet(client, tick)
+    print(f"      event_id={event_id} idempotency_key={idempotency_key} expected_payout_cents={expected_payout}")
+
+    print("[5/7] Waiting 500ms for risk_engine to evaluate and publish bets-results...")
+    await asyncio.sleep(0.5)
+
+    print("[6/7] Verifying settlement worker debited wallet to $90.00 and wrote BET_STAKE...")
+    await wait_for_debit()
+
+    print("[7/7] Triggering match settlement and verifying payout credit...")
+    settlement = trigger_settlement(client, tick["match_id"], tick["selection_id"])
+    final_balance = await get_wallet_balance()
+    expected_final_balance = 9_000 + expected_payout
+    payout_rows = await get_ledger_count("BET_PAYOUT")
+    if final_balance != expected_final_balance:
+        raise AssertionError(f"bad final balance: expected {expected_final_balance}, got {final_balance}")
+    if payout_rows < 1:
+        raise AssertionError("BET_PAYOUT ledger row was not recorded")
+    print(f"PASS: settlement={settlement}, final_balance_cents={final_balance}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
