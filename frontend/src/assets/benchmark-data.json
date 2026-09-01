@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-09-01T11:39:39.013Z",
+  "total_events_processed": 50000,
+  "throughput_ops_sec": 343546,
+  "p50_latency_us": 1.80,
+  "p90_latency_us": 3.10,
+  "p95_latency_us": 3.50,
+  "p99_latency_us": 4.40,
+  "min_latency_us": 1.60,
+  "max_latency_us": 4064.95,
+  "avg_latency_us": 2.30,
+  "memory_footprint_mb": 6.25,
+  "zero_copy_string_view": true,
+  "lock_free_atomics": true,
+  "accepted_count": 49000,
+  "rejected_count": 1000
+}
