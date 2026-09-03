@@ -63,8 +63,14 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </form>
 
-      <div *ngIf="message()" class="mt-3 rounded-xl bg-slate-950/80 p-2.5 text-xs text-cyan-300 font-mono border border-slate-800">
-        {{ message() }}
+      <div *ngIf="message()" class="mt-3 flex items-center gap-2 rounded-xl bg-slate-950/80 p-2.5 text-xs font-mono border" [ngClass]="isSuccess() ? 'text-emerald-300 border-emerald-800/60' : 'text-rose-300 border-rose-800/60'">
+        <svg *ngIf="isSuccess()" class="h-4 w-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        </svg>
+        <svg *ngIf="!isSuccess()" class="h-4 w-4 text-rose-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+        <span>{{ message() }}</span>
       </div>
     </section>
   `
@@ -73,20 +79,33 @@ export class AuthPanelComponent {
   email = 'e2e-user@example.com';
   password = 'correct-horse-battery-staple';
   readonly message = signal('');
+  readonly isSuccess = signal(true);
 
   constructor(readonly auth: AuthService) {}
 
   register(): void {
     this.auth.register(this.email, this.password).subscribe({
-      next: (session) => this.message.set(`✓ Registered: ${session.email}`),
-      error: (error) => this.message.set(`✕ ${error?.error?.detail ?? 'Registration failed'}`)
+      next: (session) => {
+        this.isSuccess.set(true);
+        this.message.set(`Registered: ${session.email}`);
+      },
+      error: (error) => {
+        this.isSuccess.set(false);
+        this.message.set(error?.error?.detail ?? 'Registration failed');
+      }
     });
   }
 
   login(): void {
     this.auth.login(this.email, this.password).subscribe({
-      next: (session) => this.message.set(`✓ Logged in as: ${session.email}`),
-      error: (error) => this.message.set(`✕ ${error?.error?.detail ?? 'Login failed'}`)
+      next: (session) => {
+        this.isSuccess.set(true);
+        this.message.set(`Logged in as: ${session.email}`);
+      },
+      error: (error) => {
+        this.isSuccess.set(false);
+        this.message.set(error?.error?.detail ?? 'Login failed');
+      }
     });
   }
 }

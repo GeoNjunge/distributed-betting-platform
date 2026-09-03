@@ -33,23 +33,32 @@ import { TracingService } from '../../core/services/tracing.service';
             <button
               type="button"
               (click)="selectScenario('accepted')"
-              class="rounded-lg border border-emerald-700/50 bg-emerald-950/40 px-3 py-1 text-xs font-medium text-emerald-300 transition hover:bg-emerald-900/60 hover:text-emerald-200 active:scale-95"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/50 bg-emerald-950/40 px-3 py-1 text-xs font-medium text-emerald-300 transition hover:bg-emerald-900/60 hover:text-emerald-200 active:scale-95"
             >
-              ✓ Happy Path (Accepted)
+              <svg class="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+              </svg>
+              <span>Happy Path (Accepted)</span>
             </button>
             <button
               type="button"
               (click)="selectScenario('stale')"
-              class="rounded-lg border border-amber-700/50 bg-amber-950/40 px-3 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-900/60 hover:text-amber-200 active:scale-95"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-amber-700/50 bg-amber-950/40 px-3 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-900/60 hover:text-amber-200 active:scale-95"
             >
-              ⚠ Stale Quote (>200ms)
+              <svg class="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+              <span>Stale Quote (>200ms)</span>
             </button>
             <button
               type="button"
               (click)="selectScenario('saec')"
-              class="rounded-lg border border-rose-700/50 bg-rose-950/40 px-3 py-1 text-xs font-medium text-rose-300 transition hover:bg-rose-900/60 hover:text-rose-200 active:scale-95"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-rose-700/50 bg-rose-950/40 px-3 py-1 text-xs font-medium text-rose-300 transition hover:bg-rose-900/60 hover:text-rose-200 active:scale-95"
             >
-              ✕ SAEC Limit Exceeded
+              <svg class="h-3.5 w-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+              <span>SAEC Limit Exceeded</span>
             </button>
           </div>
         </div>
@@ -83,9 +92,12 @@ import { TracingService } from '../../core/services/tracing.service';
             type="button"
             (click)="refreshRecent()"
             title="Refresh recent bets"
-            class="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 active:scale-95"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 active:scale-95"
           >
-            ↺ Refresh
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            <span>Refresh</span>
           </button>
         </div>
 
@@ -123,10 +135,12 @@ import { TracingService } from '../../core/services/tracing.service';
               <button
                 type="button"
                 (click)="copyToClipboard(trace.bet_id)"
-                class="text-slate-400 hover:text-white"
+                class="inline-flex items-center text-slate-400 hover:text-white transition"
                 title="Copy Bet ID"
               >
-                📋
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                </svg>
               </button>
             </div>
             <span class="text-[11px] font-mono text-slate-500">Key: {{ trace.idempotency_key }}</span>

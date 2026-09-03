@@ -44,7 +44,13 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
                 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-amber-950/40 hover:from-amber-500 hover:to-orange-500': benchmarkService.isSimulating()
               }"
             >
-              <span class="text-sm">{{ benchmarkService.isSimulating() ? '⏸ Pause Simulation' : '▶ Start Live Simulation' }}</span>
+              <svg *ngIf="benchmarkService.isSimulating()" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M6.75 5.25a.75.75 0 0 1 .75.75v12a.75.75 0 0 1-1.5 0v-12a.75.75 0 0 1 .75-.75Zm9.75 0a.75.75 0 0 1 .75.75v12a.75.75 0 0 1-1.5 0v-12a.75.75 0 0 1 .75-.75Z" />
+              </svg>
+              <svg *ngIf="!benchmarkService.isSimulating()" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+              </svg>
+              <span>{{ benchmarkService.isSimulating() ? 'Pause Simulation' : 'Start Live Simulation' }}</span>
             </button>
 
             <button
@@ -52,7 +58,10 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
               (click)="benchmarkService.fetchBenchmarkData()"
               class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition duration-150 shadow-md"
             >
-              <span>🔄 Reload Asset</span>
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              <span>Reload Asset</span>
             </button>
           </div>
         </div>
@@ -91,7 +100,12 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
             <span class="text-xs font-medium text-slate-400">ops/sec</span>
           </div>
           <div class="mt-2 flex items-center justify-between text-xs text-slate-400">
-            <span class="text-emerald-400 font-semibold">&uarr; 100% In-Memory</span>
+            <span class="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+              </svg>
+              <span>100% In-Memory</span>
+            </span>
             <span class="text-slate-500">Single Thread</span>
           </div>
           <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
@@ -256,7 +270,11 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
           <!-- Speed comparison benchmark callout -->
           <div class="mt-6 rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4">
             <div class="flex items-start gap-3">
-              <span class="text-lg">⚡</span>
+              <span class="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-900/40 text-emerald-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                </svg>
+              </span>
               <div class="text-xs text-emerald-300/90 leading-relaxed">
                 <strong class="text-emerald-200">3,500x Faster than Dynamic Interpreters:</strong> 
                 Standard Python/Node.js validation loops require 10–25ms. The C++20 engine completes payload parsing, quote age calculation, and lock-free CAS debits in <strong class="text-white">&lt; 5 microseconds</strong>.
@@ -367,7 +385,9 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
           <!-- Spec 1 -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm mb-1">
-              <span>🚀</span>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+              </svg>
               <span>Zero-Copy String Views</span>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">
@@ -378,7 +398,9 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
           <!-- Spec 2 -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-1">
-              <span>🔒</span>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
               <span>Lock-Free CAS Atomics</span>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">
@@ -389,7 +411,9 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
           <!-- Spec 3 -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div class="flex items-center gap-2 text-amber-400 font-bold text-sm mb-1">
-              <span>🛡️</span>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+              </svg>
               <span>Stale Quote Protection</span>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">
@@ -400,7 +424,9 @@ import { BenchmarkService } from '../../core/services/benchmark.service';
           <!-- Spec 4 -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div class="flex items-center gap-2 text-purple-400 font-bold text-sm mb-1">
-              <span>⚖️</span>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
+              </svg>
               <span>Single-Account Exposure</span>
             </div>
             <p class="text-xs text-slate-400 leading-relaxed">

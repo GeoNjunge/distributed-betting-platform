@@ -86,7 +86,7 @@ def run_cpp_benchmark(events: int, output_path: Path) -> dict:
 def format_summary_table(data: dict) -> None:
     """Prints a styled terminal summary card."""
     print("=" * 68)
-    print("🎯 BENCHMARK TELEMETRY EXPORT SUMMARY")
+    print("BENCHMARK TELEMETRY EXPORT SUMMARY")
     print("=" * 68)
     print(f"  • Timestamp:               {data.get('timestamp')}")
     print(f"  • Total Events Processed:  {data.get('total_events_processed', 0):,}")
@@ -118,9 +118,9 @@ def main():
     try:
         data = run_cpp_benchmark(events=args.events, output_path=output_path)
         format_summary_table(data)
-        print(f"\n✅ Successfully exported benchmark telemetry to:\n   {output_path}\n")
+        print(f"\n[SUCCESS] Successfully exported benchmark telemetry to:\n   {output_path}\n")
     except Exception as e:
-        print(f"\n❌ Benchmark execution failed: {e}", file=sys.stderr)
+        print(f"\n[ERROR] Benchmark execution failed: {e}", file=sys.stderr)
         sys.exit(1)
 
 

@@ -84,14 +84,22 @@ import { TracingService } from '../../core/services/tracing.service';
         </div>
       }
 
-      <p *ngIf="!auth.isAuthenticated()" class="mt-4 text-xs font-medium text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
-        🔐 Login or register to execute orders against the C++ Risk Engine.
+      <p *ngIf="!auth.isAuthenticated()" class="mt-4 flex items-center gap-2 text-xs font-medium text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
+        <svg class="h-4 w-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <span>Login or register to execute orders against the C++ Risk Engine.</span>
       </p>
 
       <div *ngIf="state().message" class="mt-4 rounded-xl p-3.5 text-xs border" [ngClass]="statusClasses()">
         <div class="flex items-center justify-between">
           <strong>{{ state().status }}</strong>
-          <span class="text-[10px] font-mono opacity-80">{{ state().status === 'ACCEPTED' ? '✓ Persisted' : '' }}</span>
+          <span *ngIf="state().status === 'ACCEPTED'" class="inline-flex items-center gap-1 text-[10px] font-mono opacity-80">
+            <svg class="h-3 w-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <span>Persisted</span>
+          </span>
         </div>
         <p class="mt-1">{{ state().message }}</p>
         <div *ngIf="state().eventId" class="mt-2.5 pt-2 border-t border-white/10 flex flex-col gap-1.5">
@@ -101,7 +109,10 @@ import { TracingService } from '../../core/services/tracing.service';
             (click)="onInspectTrace(state().eventId!)"
             class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-950/80 px-3 py-1.5 text-xs font-bold text-cyan-300 border border-cyan-700/60 transition hover:bg-cyan-900"
           >
-            <span>🔍 Inspect in Request Tracer</span>
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            <span>Inspect in Request Tracer</span>
           </button>
         </div>
       </div>

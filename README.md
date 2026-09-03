@@ -12,7 +12,7 @@ A high-performance, distributed, event-driven betting and sports trading platfor
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```
                                   +---------------------------------------+
@@ -67,7 +67,7 @@ A high-performance, distributed, event-driven betting and sports trading platfor
 
 ---
 
-## ⚡ Key Capabilities & Technical Highlights
+## Key Capabilities & Technical Highlights
 
 1. **Deterministic Idempotency & Ingress Gateway (`ingress_service`)**:
    - Computes deterministic order identity: `idempotency_key = sha256(user_id:match_id:timestamp)`.
@@ -101,7 +101,7 @@ A high-performance, distributed, event-driven betting and sports trading platfor
 
 ---
 
-## 📊 Local C++ Benchmarking & Telemetry Export
+## Local C++ Benchmarking & Telemetry Export
 
 Run high-resolution local load tests (20,000 – 50,000 synthetic bet events) directly against the C++ core:
 
@@ -128,7 +128,7 @@ python3 scripts/run_benchmark.py --events 50000 --release
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/)
@@ -177,7 +177,7 @@ Open your browser and navigate to: **`http://localhost:4200`**
 
 ---
 
-### 🌐 Vercel SPA Deployment
+### Vercel SPA Deployment
 
 The frontend includes `frontend/vercel.json` configured with single-page application rewrites:
 
@@ -190,7 +190,7 @@ Visitors can explore the **Trading Desk**, **Pipeline Request Tracer**, and **Sy
 
 ---
 
-## 🧪 Testing & Verification
+## Testing & Verification
 
 Run the automated 7-step end-to-end integration test suite:
 
@@ -200,7 +200,7 @@ Run the automated 7-step end-to-end integration test suite:
 
 ---
 
-## 📚 Service Endpoints Reference
+## Service Endpoints Reference
 
 | Service | Port | Protocol | Key Endpoints |
 |---|---|---|---|
@@ -213,6 +213,6 @@ Run the automated 7-step end-to-end integration test suite:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

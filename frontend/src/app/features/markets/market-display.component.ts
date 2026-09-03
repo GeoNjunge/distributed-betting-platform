@@ -78,10 +78,15 @@ const MATCH_METADATA: Record<string, { title: string; category: string }> = {
                   <div class="flex items-center gap-2">
                     <span
                       *ngIf="selection.direction !== 'flat'"
-                      class="text-[10px] font-bold"
+                      class="inline-flex items-center"
                       [ngClass]="selection.direction === 'up' ? 'text-emerald-400' : 'text-rose-400'"
                     >
-                      {{ selection.direction === 'up' ? '▲' : '▼' }}
+                      <svg *ngIf="selection.direction === 'up'" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                      </svg>
+                      <svg *ngIf="selection.direction === 'down'" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                      </svg>
                     </span>
                     <span class="font-mono text-base font-extrabold text-white">
                       {{ selection.odds | number:'1.2-4' }}

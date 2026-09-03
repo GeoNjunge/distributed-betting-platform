@@ -46,15 +46,21 @@ import { SystemStatusService } from '../../core/services/system-status.service';
           <span>{{ m.change }}</span>
           <span
             *ngIf="m.trend === 'up'"
-            class="font-semibold text-emerald-400"
+            class="inline-flex items-center gap-1 font-semibold text-emerald-400"
           >
-            &uarr; Live
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+            </svg>
+            <span>Live</span>
           </span>
           <span
             *ngIf="m.trend === 'down'"
-            class="font-semibold text-cyan-400"
+            class="inline-flex items-center gap-1 font-semibold text-cyan-400"
           >
-            &darr; Sub-ms
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+            </svg>
+            <span>Sub-ms</span>
           </span>
         </div>
       </div>

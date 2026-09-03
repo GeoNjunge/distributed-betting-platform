@@ -119,8 +119,11 @@ interface SettleResult {
       <!-- Settlement Feedback Notification -->
       <div *ngIf="lastResult()" class="mt-4 rounded-xl border border-purple-500/30 bg-purple-950/40 p-4">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-purple-300">
-            ✓ Settlement Transaction Committed ({{ lastResult()?.match_id }})
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-300">
+            <svg class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <span>Settlement Transaction Committed ({{ lastResult()?.match_id }})</span>
           </span>
           <span class="text-xs font-mono text-purple-200 font-bold">
             Total Payout: \${{ ((lastResult()?.total_payout_cents || 0) / 100).toFixed(2) }}

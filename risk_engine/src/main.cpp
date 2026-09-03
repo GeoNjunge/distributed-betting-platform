@@ -181,7 +181,7 @@ int run_standalone_benchmark(std::size_t event_count, const std::string& output_
     engine.set_balance("demo-account", 500'000'000);
 
     std::cout << "====================================================================" << std::endl;
-    std::cout << "🚀 C++20 RISK ENGINE HIGH-PERFORMANCE BENCHMARK HARNESS" << std::endl;
+    std::cout << "C++20 RISK ENGINE HIGH-PERFORMANCE BENCHMARK HARNESS" << std::endl;
     std::cout << "====================================================================" << std::endl;
     std::cout << "• Events to process:   " << event_count << std::endl;
     std::cout << "• Account pool size:   " << kAccountPoolSize << " accounts" << std::endl;
@@ -267,7 +267,7 @@ int run_standalone_benchmark(std::size_t event_count, const std::string& output_
     const auto metrics = compute_benchmark_metrics(durations_ns, total_wall_time_ns, accepted_count, rejected_count);
 
     std::cout << "\n====================================================================" << std::endl;
-    std::cout << "📊 BENCHMARK EXECUTION RESULTS" << std::endl;
+    std::cout << "BENCHMARK EXECUTION RESULTS" << std::endl;
     std::cout << "====================================================================" << std::endl;
     std::cout << std::fixed << std::setprecision(2);
     std::cout << "• Total Events Processed: " << metrics.total_events_processed << std::endl;

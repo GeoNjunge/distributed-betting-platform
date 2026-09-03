@@ -131,7 +131,7 @@
 - **`SettlementPanelComponent` (`src/app/features/settlement/settlement-panel.component.ts`)**:
   - Operator controls to trigger live match settlements and watch automated payouts execute.
 - **`BetSlipComponent` & `MarketDisplayComponent`**:
-  - Modernized with price direction badges (▲/▼), fast stake selectors, and 1-click "Inspect in Request Tracer" navigation.
+  - Modernized with price direction indicators, fast stake selectors, and 1-click "Inspect in Request Tracer" navigation.
 
 ---
 
