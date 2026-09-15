@@ -95,6 +95,30 @@ class RecentBetItem(BaseModel):
     created_at: str
 
 
+class MpesaDepositRequest(BaseModel):
+    """Initiate an M-Pesa STK Push deposit into a user's wallet."""
+
+    user_id: UUID
+    phone_number: str = Field(min_length=12, max_length=15, pattern=r"^254[17]\d{8}$")
+    amount: int = Field(gt=0, description="Deposit amount in whole KES (no decimals)")
+    account_reference: str = Field(default="DEPOSIT", min_length=1, max_length=12)
+    transaction_desc: str = Field(default="Wallet deposit", min_length=1, max_length=13)
+
+
+class MpesaStkPushResponse(BaseModel):
+    checkout_request_id: str
+    merchant_request_id: str | None = None
+    customer_message: str | None = None
+    response_code: str
+    response_description: str
+    status: str
+
+
+class MpesaCallbackAck(BaseModel):
+    ResultCode: int = 0
+    ResultDesc: str = "Accepted"
+
+
 class SystemHealthResponse(BaseModel):
     postgres_status: str
     postgres_latency_ms: float

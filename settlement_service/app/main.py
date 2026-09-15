@@ -5,15 +5,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import create_all, engine
+from app.mpesa import close_mpesa_state, init_mpesa_state
+from app.mpesa_routes import router as mpesa_router
 from app.settlement import router as settlement_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_mpesa_state(app)
     await create_all()
     try:
         yield
     finally:
+        await close_mpesa_state(app)
         await engine.dispose()
 
 
@@ -27,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(settlement_router)
+app.include_router(mpesa_router)
 
 
 @app.get("/healthz", include_in_schema=False)

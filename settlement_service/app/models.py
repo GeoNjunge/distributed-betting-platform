@@ -28,6 +28,12 @@ class LedgerType(str, enum.Enum):
     BET_PAYOUT = "BET_PAYOUT"
 
 
+class MpesaTransactionStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -38,6 +44,7 @@ class User(Base):
     wallet: Mapped["Wallet"] = relationship(back_populates="user", uselist=False)
     bets: Mapped[list["Bet"]] = relationship(back_populates="user")
     ledger_entries: Mapped[list["WalletLedger"]] = relationship(back_populates="user")
+    mpesa_transactions: Mapped[list["MpesaTransaction"]] = relationship(back_populates="user")
 
 
 class Wallet(Base):
@@ -49,6 +56,32 @@ class Wallet(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="wallet")
+
+
+class MpesaTransaction(Base):
+    __tablename__ = "mpesa_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    checkout_request_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    merchant_request_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    phone_number: Mapped[str] = mapped_column(String(16), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[MpesaTransactionStatus] = mapped_column(
+        Enum(MpesaTransactionStatus, name="mpesa_transaction_status"),
+        default=MpesaTransactionStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    result_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result_desc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mpesa_receipt_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    user: Mapped[User] = relationship(back_populates="mpesa_transactions")
 
 
 class Bet(Base):

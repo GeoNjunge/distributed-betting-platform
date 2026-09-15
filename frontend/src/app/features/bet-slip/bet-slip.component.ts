@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
 import { BetSlipService } from '../../core/services/bet-slip.service';
+import { AuthModalService } from '../../core/services/auth-modal.service';
 import { TracingService } from '../../core/services/tracing.service';
 
 @Component({
@@ -11,111 +12,160 @@ import { TracingService } from '../../core/services/tracing.service';
   standalone: true,
   imports: [CurrencyPipe, FormsModule, NgClass, NgIf],
   template: `
-    <aside class="sticky top-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-2xl backdrop-blur-md">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div>
-          <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Order Slip</span>
-          <h2 class="text-lg font-extrabold text-white">Execution Ticket</h2>
+    <aside class="sticky top-20 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
+      
+      <!-- Slip Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Quick Bet Slip</h2>
         </div>
-        <span class="rounded-md bg-emerald-950/60 px-2 py-0.5 text-[10px] font-mono text-emerald-300 border border-emerald-800/60">
-          STP / Direct Kafka
-        </span>
+
+        @if (state().selection) {
+          <button
+            type="button"
+            (click)="betSlip.clear()"
+            class="text-[11px] font-semibold text-slate-400 transition hover:text-rose-500"
+          >
+            Clear
+          </button>
+        }
       </div>
 
+      <!-- Active Selection or Empty State -->
       @if (state().selection; as selection) {
-        <div class="mt-4 rounded-xl bg-slate-950/70 p-3.5 text-xs text-slate-200 border border-slate-800/80">
-          <div class="flex justify-between items-center"><span class="text-slate-400">Match ID</span><strong class="font-mono text-cyan-300">{{ selection.matchId }}</strong></div>
-          <div class="mt-2 flex justify-between items-center"><span class="text-slate-400">Selection</span><strong class="text-white">{{ selection.selectionId }}</strong></div>
-          <div class="mt-2 flex justify-between items-center"><span class="text-slate-400">Dec Odds</span><strong class="text-emerald-400 text-sm font-bold">{{ selection.odds }}</strong></div>
+        
+        <!-- Selection Summary Card -->
+        <div class="mt-4 rounded-xl border border-slate-200/90 bg-slate-50 p-3.5 text-xs transition-colors dark:border-slate-800 dark:bg-slate-950/70">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 dark:text-white">{{ formatSelectionTitle(selection.selectionId) }}</span>
+            <span class="rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-black text-emerald-600 dark:text-emerald-400">
+              {{ selection.odds }}
+            </span>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+            <span>Match: {{ selection.matchId }}</span>
+            <span class="font-mono">STP</span>
+          </div>
         </div>
 
-        <label class="mt-4 grid gap-1.5 text-xs font-semibold text-slate-300">
-          Stake Amount ($ USD)
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold">$</span>
-            <input
-              class="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-7 pr-3 font-mono text-sm text-white outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
-              type="number"
-              min="0.01"
-              step="1"
-              [ngModel]="state().stakeDollars"
-              (ngModelChange)="betSlip.updateStake($event)"
-            />
-          </div>
-        </label>
+        <!-- POST-AUTHENTICATION FLOW: Full Stake & Submission Interface -->
+        @if (auth.isAuthenticated()) {
+          <div class="mt-4 space-y-4">
+            <!-- Stake Input -->
+            <label class="grid gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span>Stake Amount ($ USD)</span>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 font-bold text-slate-400">$</span>
+                <input
+                  class="w-full rounded-xl border border-slate-200 bg-white py-2 pl-7 pr-3 font-mono text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  type="number"
+                  min="0.01"
+                  step="1"
+                  [ngModel]="state().stakeDollars"
+                  (ngModelChange)="betSlip.updateStake($event)"
+                />
+              </div>
+            </label>
 
-        <!-- Quick Stake Chips -->
-        <div class="mt-2 flex gap-1.5">
-          @for (amt of [10, 25, 50, 100]; track amt) {
+            <!-- Quick Stake Buttons -->
+            <div class="flex gap-1.5">
+              @for (amt of [10, 25, 50, 100]; track amt) {
+                <button
+                  type="button"
+                  (click)="betSlip.updateStake(amt)"
+                  class="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                >
+                  +\${{ amt }}
+                </button>
+              }
+            </div>
+
+            <!-- Payout Computation -->
+            <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-3 text-xs text-slate-600 dark:border-slate-800/60 dark:bg-slate-950/40 dark:text-slate-300">
+              <div class="flex justify-between">
+                <span>Total Stake</span>
+                <span class="font-mono font-bold text-slate-900 dark:text-white">\${{ state().stakeDollars }}</span>
+              </div>
+              <div class="mt-1 flex justify-between">
+                <span>Est. Return</span>
+                <span class="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                  {{ betSlip.potentialPayout() | currency:'USD' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Authenticated Primary Submission Button -->
+            <button
+              class="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-500 active:scale-98 disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="state().status === 'PENDING' || betSlip.stakeCents() <= 0"
+              (click)="onSubmitBet()"
+            >
+              {{ state().status === 'PENDING' ? 'Placing Bet...' : 'Place Bet' }}
+            </button>
+          </div>
+        } @else {
+          <!-- UNAUTHENTICATED STATE: Odds are visible, but submission is gated -->
+          <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-center transition-colors dark:border-amber-900/40 dark:bg-amber-950/20">
+            <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 class="mt-2 text-xs font-bold text-amber-900 dark:text-amber-200">Authentication Required</h3>
+            <p class="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+              Sign in or create an account to configure your stake and submit tickets.
+            </p>
+
             <button
               type="button"
-              (click)="betSlip.updateStake(amt)"
-              class="flex-1 rounded-lg border border-slate-700 bg-slate-800/60 py-1 text-[11px] font-medium text-slate-300 transition hover:bg-slate-700 hover:text-white"
+              (click)="authModal.open('login')"
+              class="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-500 active:scale-98"
             >
-              +\${{ amt }}
+              Log In to Place Bet
             </button>
-          }
-        </div>
+          </div>
+        }
 
-        <dl class="mt-4 grid gap-1.5 rounded-xl bg-slate-950/50 p-3 text-xs text-slate-300 border border-slate-800/60">
-          <div class="flex justify-between"><dt class="text-slate-400">Stake in Cents</dt><dd class="font-mono font-bold text-white">{{ betSlip.stakeCents() }} ¢</dd></div>
-          <div class="flex justify-between"><dt class="text-slate-400">Est. Payout</dt><dd class="font-mono font-extrabold text-emerald-300">{{ betSlip.potentialPayout() | currency:'USD' }}</dd></div>
-        </dl>
-
-        <button
-          class="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 font-bold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:from-emerald-400 hover:to-teal-400 active:scale-98 disabled:cursor-not-allowed disabled:opacity-40"
-          [disabled]="!auth.isAuthenticated() || state().status === 'PENDING'"
-          (click)="onSubmitBet()"
-        >
-          {{ state().status === 'PENDING' ? 'Ingesting via Kafka...' : 'Submit Order' }}
-        </button>
-        <button
-          class="mt-2 w-full rounded-xl border border-slate-800 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition"
-          (click)="betSlip.clear()"
-        >
-          Clear Order
-        </button>
       } @else {
-        <div class="mt-4 rounded-xl border border-dashed border-slate-800 p-6 text-center text-xs text-slate-400">
-          <svg class="mx-auto h-8 w-8 text-slate-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- Empty State Prompt -->
+        <div class="mt-4 rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+          <svg class="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
-          Select an outcome from live matches to configure an order ticket.
+          <span class="block font-medium">Your slip is currently empty</span>
+          <span class="mt-0.5 block text-[11px]">Click any live odd to start building your ticket</span>
         </div>
       }
 
-      <p *ngIf="!auth.isAuthenticated()" class="mt-4 flex items-center gap-2 text-xs font-medium text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
-        <svg class="h-4 w-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-        </svg>
-        <span>Login or register to execute orders against the C++ Risk Engine.</span>
-      </p>
+      <!-- Order Status Feedback (when submitted) -->
+      @if (state().message) {
+        <div class="mt-4 rounded-xl border p-3.5 text-xs transition-colors" [ngClass]="statusClasses()">
+          <div class="flex items-center justify-between font-bold">
+            <span>{{ state().status === 'ACCEPTED' ? '✓ Bet Confirmed' : state().status }}</span>
+          </div>
+          <p class="mt-1">{{ state().message }}</p>
 
-      <div *ngIf="state().message" class="mt-4 rounded-xl p-3.5 text-xs border" [ngClass]="statusClasses()">
-        <div class="flex items-center justify-between">
-          <strong>{{ state().status }}</strong>
-          <span *ngIf="state().status === 'ACCEPTED'" class="inline-flex items-center gap-1 text-[10px] font-mono opacity-80">
-            <svg class="h-3 w-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-            </svg>
-            <span>Persisted</span>
-          </span>
+          @if (state().eventId) {
+            <div class="mt-2.5 flex flex-col gap-1.5 border-t border-slate-200/50 pt-2 dark:border-slate-800">
+              <span class="font-mono text-[10px] break-all opacity-75">Trace ID: {{ state().eventId }}</span>
+              <button
+                type="button"
+                (click)="onInspectTrace(state().eventId!)"
+                class="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <span>Inspect Trace in Telemetry</span>
+                <span class="font-mono">&rarr;</span>
+              </button>
+            </div>
+          }
         </div>
-        <p class="mt-1">{{ state().message }}</p>
-        <div *ngIf="state().eventId" class="mt-2.5 pt-2 border-t border-white/10 flex flex-col gap-1.5">
-          <span class="font-mono text-[10px] break-all opacity-80">Trace ID: {{ state().eventId }}</span>
-          <button
-            type="button"
-            (click)="onInspectTrace(state().eventId!)"
-            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-950/80 px-3 py-1.5 text-xs font-bold text-cyan-300 border border-cyan-700/60 transition hover:bg-cyan-900"
-          >
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-            <span>Inspect in Request Tracer</span>
-          </button>
-        </div>
-      </div>
+      }
+
     </aside>
   `
 })
@@ -123,15 +173,26 @@ export class BetSlipComponent {
   @Output() viewTrace = new EventEmitter<string>();
 
   readonly state = this.betSlip.state;
-  readonly canSubmit = computed(() => this.auth.isAuthenticated() && !!this.state().selection && this.state().status !== 'PENDING');
 
   constructor(
     readonly betSlip: BetSlipService,
     readonly auth: AuthService,
+    readonly authModal: AuthModalService,
     readonly tracingService: TracingService
   ) {}
 
+  formatSelectionTitle(selectionId: string): string {
+    return selectionId
+      .replace(/^match-\d+-/, '')
+      .replace(/-/g, ' ')
+      .toUpperCase();
+  }
+
   onSubmitBet(): void {
+    if (!this.auth.isAuthenticated()) {
+      this.authModal.open('login');
+      return;
+    }
     this.betSlip.submit();
   }
 
@@ -143,9 +204,9 @@ export class BetSlipComponent {
   statusClasses(): Record<string, boolean> {
     const status = this.state().status;
     return {
-      'bg-cyan-950/50 text-cyan-200 border-cyan-800/60': status === 'PENDING',
-      'bg-emerald-950/60 text-emerald-200 border-emerald-800/60': status === 'ACCEPTED',
-      'bg-rose-950/60 text-rose-200 border-rose-800/60': status === 'REJECTED' || status === 'ERROR'
+      'bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-200 dark:border-cyan-800/60': status === 'PENDING',
+      'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800/60': status === 'ACCEPTED',
+      'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800/60': status === 'REJECTED' || status === 'ERROR'
     };
   }
 }

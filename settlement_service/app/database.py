@@ -27,7 +27,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 async def create_all() -> None:
     # Helpful for standalone local runs. Production should use Alembic-managed
     # migrations instead of auto-creating schema on every deployment.
-    from app import models  # noqa: F401 imported so metadata includes models
+    from app import models  # noqa: F401 — register ORM metadata
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

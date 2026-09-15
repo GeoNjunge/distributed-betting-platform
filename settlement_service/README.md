@@ -43,7 +43,13 @@ settlement_service/
     ├── models.py
     ├── schemas.py
     ├── settlement.py
-    └── worker.py
+    ├── mpesa.py
+    ├── mpesa_routes.py
+    ├── worker.py
+    ├── oauth_request.py
+    ├── stk_push.py
+    ├── webhook_version.py
+    └── sms_otp_demo.py
 ```
 
 ## Environment Variables
@@ -55,6 +61,54 @@ settlement_service/
 | `BETS_RESULTS_TOPIC` | `bets-results` | Input topic |
 | `KAFKA_CONSUMER_GROUP` | `settlement-service-v1` | Worker consumer group |
 | `APP_NAME` | `settlement-service` | FastAPI title |
+| `CONSUMER_KEY` | _(required for M-Pesa)_ | Safaricom Daraja consumer key |
+| `CONSUMER_SECRET` | _(required for M-Pesa)_ | Safaricom Daraja consumer secret |
+| `MPESA_SHORTCODE` | `174379` | Paybill / till shortcode (sandbox default) |
+| `MPESA_PASSKEY` | sandbox passkey | STK password signing passkey |
+| `MPESA_BASE_URL` | `https://sandbox.safaricom.co.ke` | Daraja host (swap for production URL) |
+| `NGROK_URL` | _(local dev)_ | ngrok HTTPS base URL; app builds `…/api/v1/mpesa/callback` automatically |
+| `MPESA_CALLBACK_URL` | _(optional)_ | Override full callback URL (default: `{NGROK_URL}/api/v1/mpesa/callback`) |
+| `MPESA_TRANSACTION_TYPE` | `CustomerPayBillOnline` | Daraja `TransactionType` for STK Push |
+| `MPESA_OAUTH_REFRESH_SKEW_SECONDS` | `60` | Refresh OAuth token this many seconds before expiry |
+| `AFRICAS_TALKING_API_KEY` | _(optional)_ | Only for the standalone `sms_otp_demo.py` script |
+
+## M-Pesa STK Push (local + ngrok)
+
+Safaricom delivers STK results asynchronously to your callback URL. On a laptop, that URL must be reachable from the internet—typically via [ngrok](https://ngrok.com/).
+
+1. Start the settlement API on port **8002** (see [Run API](#run-api)).
+2. In another terminal, forward that port:
+
+```bash
+ngrok http 8002
+```
+
+3. Copy the HTTPS forwarding URL from the ngrok dashboard (for example `https://abc123.ngrok-free.app`). **Do not** add a trailing slash.
+4. Set it in `settlement_service/.env`:
+
+```bash
+NGROK_URL=https://abc123.ngrok-free.app
+```
+
+   Do **not** use webhook.site for `CallBackURL` if you want the wallet credited automatically—Safaricom must reach this API via ngrok.
+
+5. **Restart `uvicorn`** (settings are cached for the process lifetime), then trigger a deposit:
+
+```bash
+curl -X POST http://localhost:8002/api/v1/mpesa/stk-push \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id": "00000000-0000-4000-8000-000000000001",
+    "phone_number": "254712345678",
+    "amount": 1,
+    "account_reference": "DEPOSIT",
+    "transaction_desc": "Wallet deposit"
+  }'
+```
+
+When you approve the prompt on the handset, Safaricom POSTs to `MPESA_CALLBACK_URL`. A successful payment credits the wallet (KES × 100 → cents), appends a `DEPOSIT` ledger row, and marks the `mpesa_transactions` row `SUCCESS`.
+
+OAuth tokens are cached in application memory and refreshed automatically when missing or within 60 seconds of expiry (`MPESA_OAUTH_REFRESH_SKEW_SECONDS`).
 
 ## Local Setup
 

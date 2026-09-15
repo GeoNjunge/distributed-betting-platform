@@ -23,37 +23,41 @@ const MATCH_METADATA: Record<string, { title: string; category: string }> = {
   standalone: true,
   imports: [CommonModule, DecimalPipe],
   template: `
-    <section class="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-2xl backdrop-blur-md">
-      <div class="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+    <section id="live-markets" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
+      
+      <!-- Section Header -->
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
         <div>
           <div class="flex items-center gap-2">
-            <span class="flex h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-500/20 animate-pulse"></span>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Trading Desk</span>
+            <span class="flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20 animate-pulse"></span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Live Odds Feed</span>
           </div>
-          <h2 class="text-xl font-extrabold tracking-tight text-white">Live Real-Time Markets</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Tick-by-tick random walk odds streamed via non-blocking WebSocket relay.</p>
+          <h2 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">All Live Markets</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Real-time market ticks streamed continuously via low-latency WebSocket.</p>
         </div>
+        
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/60 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/80 active:scale-95"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 active:scale-95"
             (click)="odds.connect()"
           >
-            <span class="h-2 w-2 rounded-full" [ngClass]="odds.connected() ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'"></span>
-            {{ odds.connected() ? 'WS Live :8001' : 'Reconnect WS' }}
+            <span class="h-2 w-2 rounded-full" [ngClass]="odds.connected() ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'"></span>
+            {{ odds.connected() ? 'Live Stream Active' : 'Reconnect Stream' }}
           </button>
         </div>
       </div>
 
+      <!-- Match Cards Grid -->
       <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @for (market of groupedMarkets(); track market.matchId) {
-          <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 transition-all hover:border-slate-700 hover:shadow-xl">
-            <div class="mb-3 flex items-start justify-between border-b border-slate-800/80 pb-2.5">
+          <article class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700">
+            <div class="mb-3 flex items-start justify-between border-b border-slate-200/60 pb-2.5 dark:border-slate-800/80">
               <div>
-                <span class="text-[10px] font-mono uppercase font-bold text-cyan-400">{{ market.category }}</span>
-                <h3 class="font-bold text-sm text-white">{{ market.matchTitle }}</h3>
+                <span class="text-[10px] font-mono uppercase font-bold text-emerald-600 dark:text-emerald-400">{{ market.category }}</span>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">{{ market.matchTitle }}</h3>
               </div>
-              <span class="rounded bg-slate-800 px-2 py-0.5 font-mono text-[10px] text-slate-400">
+              <span class="rounded bg-slate-200/60 px-2 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                 {{ market.matchId }}
               </span>
             </div>
@@ -67,10 +71,10 @@ const MATCH_METADATA: Record<string, { title: string; category: string }> = {
                   (click)="betSlip.select(selection)"
                 >
                   <div>
-                    <span class="block text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    <span class="block text-xs font-bold text-slate-800 group-hover:text-emerald-600 transition-colors dark:text-slate-200 dark:group-hover:text-emerald-400">
                       {{ formatSelectionTitle(selection.selectionId) }}
                     </span>
-                    <span class="block text-[10px] font-mono text-slate-400">
+                    <span class="block text-[10px] font-mono text-slate-400 dark:text-slate-500">
                       seq #{{ selection.sequence }}
                     </span>
                   </div>
@@ -78,17 +82,12 @@ const MATCH_METADATA: Record<string, { title: string; category: string }> = {
                   <div class="flex items-center gap-2">
                     <span
                       *ngIf="selection.direction !== 'flat'"
-                      class="inline-flex items-center"
-                      [ngClass]="selection.direction === 'up' ? 'text-emerald-400' : 'text-rose-400'"
+                      class="inline-flex items-center text-xs font-bold"
+                      [ngClass]="selection.direction === 'up' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'"
                     >
-                      <svg *ngIf="selection.direction === 'up'" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-                      </svg>
-                      <svg *ngIf="selection.direction === 'down'" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
-                      </svg>
+                      {{ selection.direction === 'up' ? '▲' : '▼' }}
                     </span>
-                    <span class="font-mono text-base font-extrabold text-white">
+                    <span class="font-mono text-base font-extrabold text-slate-900 dark:text-white">
                       {{ selection.odds | number:'1.2-4' }}
                     </span>
                   </div>
@@ -98,26 +97,26 @@ const MATCH_METADATA: Record<string, { title: string; category: string }> = {
           </article>
         } @empty {
           <!-- Fallback Preview Cards when WS initializes -->
-          <article *ngFor="let def of defaultPreviewMarkets" class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <div class="mb-3 flex items-start justify-between border-b border-slate-800/80 pb-2.5">
+          <article *ngFor="let def of defaultPreviewMarkets" class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+            <div class="mb-3 flex items-start justify-between border-b border-slate-200/60 pb-2.5 dark:border-slate-800/80">
               <div>
-                <span class="text-[10px] font-mono uppercase font-bold text-cyan-400">{{ def.category }}</span>
-                <h3 class="font-bold text-sm text-white">{{ def.title }}</h3>
+                <span class="text-[10px] font-mono uppercase font-bold text-emerald-600 dark:text-emerald-400">{{ def.category }}</span>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">{{ def.title }}</h3>
               </div>
-              <span class="rounded bg-slate-800 px-2 py-0.5 font-mono text-[10px] text-slate-400">{{ def.id }}</span>
+              <span class="rounded bg-slate-200/60 px-2 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{{ def.id }}</span>
             </div>
             <div class="grid gap-2">
               <button
                 *ngFor="let sel of def.selections"
                 type="button"
                 (click)="onSelectPreset(def.id, sel.id, sel.odds)"
-                class="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-900/60 p-3 text-left transition hover:border-cyan-500/60 hover:bg-slate-800"
+                class="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/60 dark:hover:bg-slate-800"
               >
                 <div>
-                  <span class="block text-xs font-bold text-white">{{ sel.name }}</span>
-                  <span class="block text-[10px] font-mono text-slate-400">Pre-match</span>
+                  <span class="block text-xs font-bold text-slate-800 dark:text-slate-200">{{ sel.name }}</span>
+                  <span class="block text-[10px] font-mono text-slate-400 dark:text-slate-500">Pre-match</span>
                 </div>
-                <span class="font-mono text-base font-extrabold text-white">{{ sel.odds.toFixed(2) }}</span>
+                <span class="font-mono text-base font-extrabold text-slate-900 dark:text-white">{{ sel.odds.toFixed(2) }}</span>
               </button>
             </div>
           </article>
@@ -203,9 +202,9 @@ export class MarketDisplayComponent implements OnInit {
 
   priceClasses(selection: MarketSelectionView): Record<string, boolean> {
     return {
-      'border-emerald-500/80 bg-emerald-950/40 shadow-sm shadow-emerald-950/50': selection.direction === 'up',
-      'border-rose-500/80 bg-rose-950/40 shadow-sm shadow-rose-950/50': selection.direction === 'down',
-      'border-slate-800 bg-slate-900/60 hover:border-slate-700': selection.direction === 'flat'
+      'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-500/80 dark:bg-emerald-950/40 dark:text-emerald-200': selection.direction === 'up',
+      'border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-500/80 dark:bg-rose-950/40 dark:text-rose-200': selection.direction === 'down',
+      'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700': selection.direction === 'flat'
     };
   }
 }
