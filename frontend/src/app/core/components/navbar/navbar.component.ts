@@ -86,7 +86,7 @@ import { AuthModalService } from '../../services/auth-modal.service';
           @if (auth.isAuthenticated()) {
             <div class="flex items-center gap-2">
               <div class="hidden sm:flex flex-col text-right">
-                <span class="text-xs font-bold text-slate-900 dark:text-white">{{ auth.session().email || 'Trader' }}</span>
+                <span class="text-xs font-bold text-slate-900 dark:text-white">{{ 'Trader' }}</span>
                 <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">$2,450.00 Balance</span>
               </div>
               <button

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, NgIf } from '@angular/common';
+import { Router } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 
@@ -26,13 +27,22 @@ import { AuthService } from '../../core/services/auth.service';
 
       <form class="grid gap-3" (ngSubmit)="login()">
         <label class="grid gap-1 text-xs font-semibold text-slate-300">
-          Email Address
+          Phone (E.164)
+          <input
+            class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            name="phone"
+            type="tel"
+            [(ngModel)]="phone"
+            required
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-semibold text-slate-300">
+          Email (register only)
           <input
             class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
             name="email"
             type="email"
             [(ngModel)]="email"
-            required
           />
         </label>
         <label class="grid gap-1 text-xs font-semibold text-slate-300">
@@ -64,12 +74,6 @@ import { AuthService } from '../../core/services/auth.service';
       </form>
 
       <div *ngIf="message()" class="mt-3 flex items-center gap-2 rounded-xl bg-slate-950/80 p-2.5 text-xs font-mono border" [ngClass]="isSuccess() ? 'text-emerald-300 border-emerald-800/60' : 'text-rose-300 border-rose-800/60'">
-        <svg *ngIf="isSuccess()" class="h-4 w-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-        </svg>
-        <svg *ngIf="!isSuccess()" class="h-4 w-4 text-rose-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
         <span>{{ message() }}</span>
       </div>
     </section>
@@ -77,17 +81,22 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class AuthPanelComponent {
   email = 'e2e-user@example.com';
+  phone = '+254700000000';
   password = 'correct-horse-battery-staple';
   readonly message = signal('');
   readonly isSuccess = signal(true);
 
-  constructor(readonly auth: AuthService) {}
+  constructor(
+    readonly auth: AuthService,
+    private readonly router: Router
+  ) {}
 
   register(): void {
-    this.auth.register(this.email, this.password).subscribe({
-      next: (session) => {
+    this.auth.register({ email: this.email, phone: this.phone, password: this.password }).subscribe({
+      next: (response) => {
         this.isSuccess.set(true);
-        this.message.set(`Registered: ${session.email}`);
+        this.message.set(`OTP sent to ${response.phone}`);
+        void this.router.navigate(['/auth/verify-otp'], { queryParams: { phone: response.phone } });
       },
       error: (error) => {
         this.isSuccess.set(false);
@@ -97,10 +106,11 @@ export class AuthPanelComponent {
   }
 
   login(): void {
-    this.auth.login(this.email, this.password).subscribe({
-      next: (session) => {
+    this.auth.login({ phone: this.phone, password: this.password }).subscribe({
+      next: () => {
         this.isSuccess.set(true);
-        this.message.set(`Logged in as: ${session.email}`);
+        this.message.set('Logged in successfully');
+        void this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.isSuccess.set(false);
