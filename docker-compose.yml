@@ -69,6 +69,9 @@ services:
       - COOKIE_SECURE=false
       - JWT_SECRET_KEY=distributed-betting-platform-secure-jwt-secret-key-32chars
       - CORS_ALLOW_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/betting_db
+      - AT_USERNAME=sandbox
+      - AT_API_KEY=
       - PYTHONUNBUFFERED=1
     depends_on:
       kafka:
