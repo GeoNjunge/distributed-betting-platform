@@ -81,15 +81,40 @@ def authenticate_user(email: EmailStr, password: str) -> UserRecord:
 
 
 def create_access_token(user: UserRecord) -> str:
-    settings = get_settings()
-    now = datetime.now(UTC)
-    claims = {
-        "sub": user.user_id,
-        "email": str(user.email),
-        "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(minutes=settings.access_token_expire_minutes)).timestamp()),
-    }
-    return jwt.encode(claims, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    access_token, _ = SecurityUtils.generate_jwt(user.user_id, str(user.email))
+    return access_token
+
+
+class SecurityUtils:
+    @staticmethod
+    def hash_password(password: str) -> str:
+        return hash_password(password)
+
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        return verify_password(password, hashed_password)
+
+    @staticmethod
+    def generate_jwt(user_id: str, email: str) -> tuple[str, str]:
+        settings = get_settings()
+        now = datetime.now(UTC)
+        access_claims = {
+            "sub": user_id,
+            "email": email,
+            "type": "access",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=settings.access_token_expire_minutes)).timestamp()),
+        }
+        refresh_claims = {
+            "sub": user_id,
+            "email": email,
+            "type": "refresh",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(days=settings.refresh_token_expire_days)).timestamp()),
+        }
+        access_token = jwt.encode(access_claims, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+        refresh_token = jwt.encode(refresh_claims, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+        return access_token, refresh_token
 
 
 def decode_access_token(token: str) -> dict:
@@ -111,6 +136,7 @@ def current_user_from_request(request: Request) -> UserRecord:
     if not user_id or not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token claims")
     user = _users_by_email.get(str(email).lower())
-    if user is None or user.user_id != user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user no longer exists")
-    return user
+    if user is not None and user.user_id == user_id:
+        return user
+    # JWT may come from DB-backed registration; allow bet ingress without in-memory mirror.
+    return UserRecord(user_id=user_id, email=email, hashed_password="")

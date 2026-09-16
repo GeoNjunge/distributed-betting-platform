@@ -4,8 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.core.database import init_db
 from app.routers import auth, bets
 from app.services.kafka import KafkaPublisher
+from app.services.redis_service import close_redis, get_redis
 
 
 @asynccontextmanager
@@ -13,9 +15,12 @@ async def lifespan(app: FastAPI):
     publisher = KafkaPublisher()
     await publisher.start()
     app.state.kafka_publisher = publisher
+    await get_redis()
+    await init_db()
     try:
         yield
     finally:
+        await close_redis()
         await publisher.stop()
 
 

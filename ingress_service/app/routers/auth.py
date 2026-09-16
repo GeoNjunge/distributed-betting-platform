@@ -1,11 +1,22 @@
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest
-from app.services.security import authenticate_user, create_access_token, create_user
+from app.core.database import get_session
+from app.schemas.auth import (
+    RegisterPendingResponse,
+    TokenResponse,
+    UserLoginRequest,
+    UserRegisterRequest,
+    VerifyOTPRequest,
+)
+from app.services.redis_service import RedisOTP, get_redis
+from app.services.sms_service import SMSService
+from app.services.user_service import UserService
 
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-router = APIRouter(tags=["auth"])
+_sms_service = SMSService()
 
 
 def _set_auth_cookie(response: Response, token: str) -> None:
@@ -21,15 +32,37 @@ def _set_auth_cookie(response: Response, token: str) -> None:
     )
 
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterRequest, response: Response) -> AuthResponse:
-    user = create_user(payload.email, payload.password)
-    _set_auth_cookie(response, create_access_token(user))
-    return AuthResponse(user_id=user.user_id, email=user.email)
+async def get_user_service(session: AsyncSession = Depends(get_session)) -> UserService:
+    redis_client = await get_redis()
+    return UserService(session, RedisOTP(redis_client), _sms_service)
 
 
-@router.post("/login", response_model=AuthResponse)
-async def login(payload: LoginRequest, response: Response) -> AuthResponse:
-    user = authenticate_user(payload.email, payload.password)
-    _set_auth_cookie(response, create_access_token(user))
-    return AuthResponse(user_id=user.user_id, email=user.email)
+@router.post("/register", response_model=RegisterPendingResponse, status_code=status.HTTP_202_ACCEPTED)
+async def register(
+    payload: UserRegisterRequest,
+    service: UserService = Depends(get_user_service),
+) -> RegisterPendingResponse:
+    result = await service.register_user(payload.email, payload.phone, payload.password, payload.username)
+    return RegisterPendingResponse(message=result["message"], phone=result["phone"])
+
+
+@router.post("/verify-otp", response_model=TokenResponse)
+async def verify_otp(
+    payload: VerifyOTPRequest,
+    response: Response,
+    service: UserService = Depends(get_user_service),
+) -> TokenResponse:
+    tokens = await service.verify_otp(payload.phone, payload.otp)
+    _set_auth_cookie(response, tokens["access_token"])
+    return TokenResponse(**tokens)
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(
+    payload: UserLoginRequest,
+    response: Response,
+    service: UserService = Depends(get_user_service),
+) -> TokenResponse:
+    tokens = await service.login(payload.phone, payload.password)
+    _set_auth_cookie(response, tokens["access_token"])
+    return TokenResponse(**tokens)
