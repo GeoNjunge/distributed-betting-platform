@@ -63,3 +63,18 @@ Thumbs.db
 learn/
 settlement_service/app/ref/
 
+# Java Build Artifacts
+.jdk21/
+# Maven build outputs
+**/target/
+*.jar
+*.war
+*.ear
+
+# IDE and System files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store

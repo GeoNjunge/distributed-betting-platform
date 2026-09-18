@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  kafka:
+    listener:
+      auto-startup: false
+
+app:
+  kafka:
+    bets-results-topic: bets-results-test

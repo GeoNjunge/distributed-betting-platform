@@ -170,6 +170,21 @@ The handler always aims to reply quickly with `{"ResultCode": 0, "ResultDesc": "
 
 ---
 
+### Java Settlement Service
+
+An alternative implementation of the settlement service using Spring Boot and async streams. This exists to:
+
+- Explore how JVM-based event processing compares to Python
+- Support deployments that prefer Java infrastructure
+- Demonstrate familiarity with Spring Boot, Kafka streams, and PostgreSQL drivers in Java
+
+Both implementations handle the same business logic: wallet debits, bet settlement, and ledger appends. The choice between them is operational (deployment platform, team preference) not functional.
+
+To run the Java version instead of Python:
+
+```bash
+docker compose -f docker-compose.java.yml up --build
+
 ## Quick Start
 
 ### 1. Prerequisites
